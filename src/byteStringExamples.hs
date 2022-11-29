@@ -1,5 +1,6 @@
 import Data.Bits (xor)
 import Data.ByteString qualified as B
+import Data.ByteString.Char8
 import Data.Char (chr, ord)
 import Data.Word (Word8)
 import Numeric (showHex)
@@ -58,12 +59,20 @@ msg = map chr msgInInts
 intToByte :: Integer -> Word8
 intToByte = fromIntegral
 
+-- converting from a bytestring to ascii looks like it wouldn't be too
+-- involved because Show shows us the ascii values of the internal bytes
+-- >>> B.pack (map fromIntegral msgInInts) :: B.ByteString
+-- "hello world!"
+
+-- but it can't actually be treated as a string
+-- >>> B.pack (map fromIntegral msgInInts) :: String
+-- Couldn't match type ‘ByteString’ with ‘[Char]’
+-- Expected: String
+--   Actual: ByteString
+
 -- this converts a bytestring to an ascii string (not an array of hex digits)
 bsToAsciiTheLongWay :: B.ByteString -> String
 bsToAsciiTheLongWay bs = map (chr . fromIntegral) (B.unpack bs)
 
 -- >>> bsToAscii (B.pack (map fromIntegral msgInInts))
--- "hello world!"
-
--- >>> B.pack (map fromIntegral msgInInts)
 -- "hello world!"
