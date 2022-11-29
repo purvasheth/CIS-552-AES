@@ -3,4 +3,4 @@ module Main where
 import Lib
 
 main :: IO ()
-main = putStrLn someFunc
+main = putStrLn "main not yet implemented!" --someFunc
