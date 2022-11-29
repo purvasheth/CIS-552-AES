@@ -4,6 +4,7 @@ import Data.ByteString.Char8 qualified as Char8 --qualified (pack)
 import Data.Map as Map
 import Data.Maybe (isJust)
 import Data.Word (Word8)
+import GHC.Base (build)
 import System.Random (genByteString)
 import Test.QuickCheck
   ( Gen,
@@ -80,8 +81,10 @@ extractBytes qb = do
 buildBlockFromQuarterRow :: Int -> Block -> Block
 buildBlockFromQuarterRow r qb = B.append pre $ B.append qb post
   where
-    pre = B.replicate (r * 4) 0x00
-    post = B.replicate ((3 - r) * 4) 0x00
+    -- filler byte
+    f = 0x00
+    pre = B.replicate (r * 4) f
+    post = B.replicate ((3 - r) * 4) f
 
 prop_shiftBytesR0 :: QuarterBlock -> Bool
 prop_shiftBytesR0 qb = case extractBytes qb of
@@ -136,7 +139,54 @@ prop_shiftBytesSortedSame b = B.sort b == B.sort (shiftBytes b)
 -- TODO remove fake func
 mixColumns = undefined
 
+-- functions to work with quarter blocks
+
+buildBlockFromQuarterCol :: Int -> Block -> Block
+buildBlockFromQuarterCol r qb = case extractBytes qb of
+  Just [x, y, z, w] ->
+    B.concat
+      [ buildRow r x,
+        buildRow r y,
+        buildRow r z,
+        buildRow r w
+      ]
+  _ -> undefined -- quarter block is invalid!
+  where
+    -- define filler byte
+    f :: Word8
+    f = 0x00
+    buildRow :: Int -> Word8 -> B.ByteString
+    -- build row number 'r'. e.x. for row 1 there is
+    -- one filler, the value, then three fillers
+    buildRow r v = B.append (B.replicate r f) $ B.cons v (B.replicate (3 - r) f)
+
 -- Unit tests based on wiki’s test vectors
+{- These are sourced from wikipedia:
+https://en.wikipedia.org/wiki/Rijndael_MixColumns
+-}
+knownValidPairs =
+  [ ([0xdb, 0x13, 0x53, 0x45], [0x8e, 0x4d, 0xa1, 0xbc]),
+    ([0xf2, 0x0a, 0x22, 0x5c], [0x9f, 0xdc, 0x58, 0x9d]),
+    ([0x01, 0x01, 0x01, 0x01], [0x01, 0x01, 0x01, 0x01]),
+    ([0xc6, 0xc6, 0xc6, 0xc6], [0xc6, 0xc6, 0xc6, 0xc6]),
+    ([0xd4, 0xd4, 0xd4, 0xd5], [0xd5, 0xd5, 0xd7, 0xd6]),
+    ([0x2d, 0x26, 0x31, 0x4c], [0x4d, 0x7e, 0xbd, 0xf8])
+  ]
+
+mixColumnsMatchesAtRow :: Int -> QuarterBlock -> QuarterBlock -> Bool
+-- TODO extract column and verify it matches rather than compare whole block
+mixColumnsMatchesAtRow i qb1 qb2 =
+  mixColumns (buildBlockFromQuarterCol i qb1)
+    == buildBlockFromQuarterCol i qb2
+
+testAllKnownPairsEachRow :: Bool
+-- for each known valid pair, build four blocks such that
+-- the pair are in one column. Test that the function applied
+-- to one block yields the other
+testAllKnownPairsEachRow = and $ do
+  (qb1, qb2) <- knownValidPairs
+  i <- [0 .. 4]
+  return $ mixColumnsMatchesAtRow i (B.pack qb1) (B.pack qb2)
 
 -- Isolate one columns and test arbitrary values
 
@@ -145,6 +195,14 @@ mixColumns = undefined
 -- TODO remove fake func
 addRoundKey = undefined
 
+zeroBlock :: Block
+zeroBlock = buildBlockFromQuarterRow 0 $ B.pack [0x00, 0x00, 0x00, 0x00]
+
 -- Unit tests for XOR (0000, 1111, etc.)
+testAddRoundKeyZeros = undefined
+
+testAddRoundKeyOnes = undefined
 
 -- Something xored with itself is zero
+prop_addRoundKeySelfIsZero :: Block -> Bool
+prop_addRoundKeySelfIsZero b = addRoundKey
