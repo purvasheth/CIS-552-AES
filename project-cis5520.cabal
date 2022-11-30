@@ -31,6 +31,8 @@ common common-stanza
     , directory
     , random
     , mtl
+    , bytestring
+    , array
   default-language:
     Haskell2010
   -- these extensions are enabled for GHC2021, turning them on now for 

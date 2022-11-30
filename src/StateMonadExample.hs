@@ -1,43 +1,44 @@
 module StateMonandExample where
 
 import Control.Monad.State (State, StateT, evalState, evalStateT, get, modify, put)
-import Lib (Block (..), Hex (..), Key128 (..), Word32 (W32), Word8 (..), xorWord32)
+import Data.Bits (xor)
+import Data.ByteString (empty)
+import Data.ByteString qualified as B
+import Data.Char (chr, ord)
+import Data.Map qualified as Map
+import Data.Word (Word8)
+import Lib (chunk, displayHex, mapInd, shiftBy, stringToByteString, xorByteString)
+import SBox (sbox)
 
-type Store = (Block, Key128)
+type Store = (B.ByteString, B.ByteString, Int)
+
+key :: B.ByteString
+key = stringToByteString "Thats my Kung Fu"
+
+block :: B.ByteString
+block = stringToByteString "Two One Nine Two"
 
 initStore :: Store
-initStore =
-  ( B
-      ( W32 (W8 (H5, H4), W8 (H7, H7), W8 (H6, HF), W8 (H2, H0)),
-        W32 (W8 (H4, HF), W8 (H6, HE), W8 (H6, H5), W8 (H2, H0)),
-        W32 (W8 (H4, HE), W8 (H6, H9), W8 (H6, HE), W8 (H6, H5)),
-        W32 (W8 (H2, H0), W8 (H5, H4), W8 (H7, H7), W8 (H6, HF))
-      ),
-    K128
-      ( W32 (W8 (H5, H4), W8 (H6, H8), W8 (H6, H1), W8 (H7, H4)),
-        W32 (W8 (H7, H3), W8 (H2, H0), W8 (H6, HD), W8 (H7, H9)),
-        W32 (W8 (H2, H0), W8 (H4, HB), W8 (H7, H5), W8 (H6, HE)),
-        W32 (W8 (H6, H7), W8 (H2, H0), W8 (H4, H6), W8 (H7, H5))
-      )
-  )
+initStore = (block, key, 0)
 
-addRoundKey :: Block -> Key128 -> Maybe Block
-addRoundKey (B (b1, b2, b3, b4)) (K128 (k1, k2, k3, k4)) =
-  do
-    nb1 <- xorWord32 b1 k1
-    nb2 <- xorWord32 b2 k2
-    nb3 <- xorWord32 b3 k3
-    nb4 <- xorWord32 b4 k4
-    return (B (nb1, nb2, nb3, nb4))
+addRoundKey :: B.ByteString -> B.ByteString -> B.ByteString
+addRoundKey = xorByteString
 
-aes :: Maybe Block -- cipher
+shiftRows :: [B.ByteString] -> B.ByteString
+shiftRows rows = B.concat (mapInd f rows)
+  where
+    f :: B.ByteString -> Int -> B.ByteString
+    f b i = B.pack (shiftBy i (B.unpack b))
+
+aes :: B.ByteString -- cipher
 aes = evalState aesHelper initStore
   where
-    aesHelper :: State Store (Maybe Block)
+    aesHelper :: State Store B.ByteString
     aesHelper =
       do
-        (block@(B (b1, b2, b3, b4)), key@(K128 (k1, k2, k3, k4))) <- get
-        return (addRoundKey block key)
+        (block, key, round) <- get
+        let newBlock = sbox (addRoundKey block key)
+        return (shiftRows (chunk 4 newBlock))
 
--- >>> aes
--- Just (B (W32 (W8 (H0,H0),W8 (H1,HF),W8 (H0,HE),W8 (H5,H4)),W32 (W8 (H3,HC),W8 (H4,HE),W8 (H0,H8),W8 (H5,H9)),W32 (W8 (H6,HE),W8 (H2,H2),W8 (H1,HB),W8 (H0,HB)),W32 (W8 (H4,H7),W8 (H7,H4),W8 (H3,H1),W8 (H1,HA))))
+-- >>> displayHex aes
+-- ["63","c0","ab","20","2f","30","cb","eb","af","2b","9f","93","a2","a0","92","c7"]
