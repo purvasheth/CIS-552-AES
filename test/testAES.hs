@@ -1,4 +1,5 @@
 import Control.Monad (replicateM)
+import Data.Bits (xor)
 import Data.ByteString qualified as B
 import Data.ByteString.Char8 qualified as Char8 --qualified (pack)
 import Data.Map as Map
@@ -15,6 +16,10 @@ import Test.QuickCheck
 import Test.QuickCheck qualified as QC
 
 ------- Enable generation of arbitrary blocks ------
+type Key = B.ByteString
+
+type RoundKey = B.ByteString
+
 type Block = B.ByteString
 
 type QuarterBlock = B.ByteString
@@ -25,6 +30,15 @@ genNChars n = replicateM n QC.arbitraryPrintableChar
 genBlock :: Gen Block
 genBlock = Char8.pack <$> genNChars 16
 
+-- generate a 128 bit key
+genKey128 :: Gen Key
+genKey128 = Char8.pack <$> genNChars 16
+
+-- generate 128 bit Round Key
+genRoundKey :: Gen Key
+genRoundKey = genKey128
+
+-- For generating rows or columns
 gen4Bytes :: Gen B.ByteString
 gen4Bytes = Char8.pack <$> genNChars 4
 
@@ -78,11 +92,10 @@ extractBytes qb = do
   (w, _) <- B.uncons zs
   return [x, y, z, w]
 
-buildBlockFromQuarterRow :: Int -> Block -> Block
-buildBlockFromQuarterRow r qb = B.append pre $ B.append qb post
+-- Row number -> Row -> filler byte
+buildBlockFromQuarterRow :: Int -> QuarterBlock -> Word8 -> Block
+buildBlockFromQuarterRow r qb f = B.append pre $ B.append qb post
   where
-    -- filler byte
-    f = 0x00
     pre = B.replicate (r * 4) f
     post = B.replicate ((3 - r) * 4) f
 
@@ -94,8 +107,9 @@ prop_shiftBytesR0 qb = case extractBytes qb of
   where
     aux :: Word8 -> Word8 -> Word8 -> Word8 -> Bool
     aux x y z w =
-      shiftBytes (buildBlockFromQuarterRow 0 (B.pack [x, y, z, w]))
-        == buildBlockFromQuarterRow 0 (B.pack [x, y, z, w])
+      shiftBytes (buildBlockFromQuarterRow 0 (B.pack [x, y, z, w])) filler
+        == buildBlockFromQuarterRow 0 (B.pack [x, y, z, w]) filler
+    filler = 0x00
 
 prop_shiftBytesR1 :: QuarterBlock -> Bool
 prop_shiftBytesR1 qb = case extractBytes qb of
@@ -105,8 +119,9 @@ prop_shiftBytesR1 qb = case extractBytes qb of
   where
     aux :: Word8 -> Word8 -> Word8 -> Word8 -> Bool
     aux x y z w =
-      shiftBytes (buildBlockFromQuarterRow 1 (B.pack [x, y, z, w]))
-        == buildBlockFromQuarterRow 1 (B.pack [y, z, w, x])
+      shiftBytes (buildBlockFromQuarterRow 1 (B.pack [x, y, z, w])) filler
+        == buildBlockFromQuarterRow 1 (B.pack [y, z, w, x]) filler
+    filler = 0x00
 
 prop_shiftBytesR2 :: QuarterBlock -> Bool
 prop_shiftBytesR2 qb = case extractBytes qb of
@@ -116,8 +131,9 @@ prop_shiftBytesR2 qb = case extractBytes qb of
   where
     aux :: Word8 -> Word8 -> Word8 -> Word8 -> Bool
     aux x y z w =
-      shiftBytes (buildBlockFromQuarterRow 2 (B.pack [x, y, z, w]))
-        == buildBlockFromQuarterRow 2 (B.pack [z, w, x, y])
+      shiftBytes (buildBlockFromQuarterRow 2 (B.pack [x, y, z, w])) filler
+        == buildBlockFromQuarterRow 2 (B.pack [z, w, x, y]) filler
+    filler = 0x00
 
 prop_shiftBytesR3 :: QuarterBlock -> Bool
 prop_shiftBytesR3 qb = case extractBytes qb of
@@ -127,8 +143,9 @@ prop_shiftBytesR3 qb = case extractBytes qb of
   where
     aux :: Word8 -> Word8 -> Word8 -> Word8 -> Bool
     aux x y z w =
-      shiftBytes (buildBlockFromQuarterRow 3 (B.pack [x, y, z, w]))
-        == buildBlockFromQuarterRow 3 (B.pack [w, x, y, z])
+      shiftBytes (buildBlockFromQuarterRow 3 (B.pack [x, y, z, w])) filler
+        == buildBlockFromQuarterRow 3 (B.pack [w, x, y, z]) filler
+    filler = 0x00
 
 -- Sorted version of stateMat should be the same for input and output
 prop_shiftBytesSortedSame :: Block -> Bool
@@ -141,8 +158,9 @@ mixColumns = undefined
 
 -- functions to work with quarter blocks
 
-buildBlockFromQuarterCol :: Int -> Block -> Block
-buildBlockFromQuarterCol r qb = case extractBytes qb of
+-- column number -> col -> filler
+buildBlockFromQuarterCol :: Int -> QuarterBlock -> Word8 -> Block
+buildBlockFromQuarterCol r qb f = case extractBytes qb of
   Just [x, y, z, w] ->
     B.concat
       [ buildRow r x,
@@ -152,9 +170,6 @@ buildBlockFromQuarterCol r qb = case extractBytes qb of
       ]
   _ -> undefined -- quarter block is invalid!
   where
-    -- define filler byte
-    f :: Word8
-    f = 0x00
     buildRow :: Int -> Word8 -> B.ByteString
     -- build row number 'r'. e.x. for row 1 there is
     -- one filler, the value, then three fillers
@@ -176,8 +191,10 @@ knownValidPairs =
 mixColumnsMatchesAtRow :: Int -> QuarterBlock -> QuarterBlock -> Bool
 -- TODO extract column and verify it matches rather than compare whole block
 mixColumnsMatchesAtRow i qb1 qb2 =
-  mixColumns (buildBlockFromQuarterCol i qb1)
-    == buildBlockFromQuarterCol i qb2
+  mixColumns (buildBlockFromQuarterCol i qb1 filler)
+    == buildBlockFromQuarterCol i qb2 filler
+  where
+    filler = 0x00
 
 testAllKnownPairsEachRow :: Bool
 -- for each known valid pair, build four blocks such that
@@ -193,16 +210,42 @@ testAllKnownPairsEachRow = and $ do
 {- AddRoundKey
 -------------------------------}
 -- TODO remove fake func
+addRoundKey :: Block -> RoundKey -> Block
 addRoundKey = undefined
 
 zeroBlock :: Block
-zeroBlock = buildBlockFromQuarterRow 0 $ B.pack [0x00, 0x00, 0x00, 0x00]
+zeroBlock = buildBlockFromQuarterRow 0 (B.pack [0x00, 0x00, 0x00, 0x00]) 0x00
+
+zeroRoundKey :: RoundKey
+zeroRoundKey = zeroBlock
+
+onesBlock :: Block
+onesBlock = buildBlockFromQuarterRow 0 (B.pack [0xFF, 0xFF, 0xFF, 0xFF]) 0xFF
+
+onesRoundKey :: RoundKey
+onesRoundKey = onesBlock
 
 -- Unit tests for XOR (0000, 1111, etc.)
-testAddRoundKeyZeros = undefined
+testAddRoundKeyZeros :: Block -> Bool
+testAddRoundKeyZeros b = addRoundKey b zeroRoundKey == b
 
-testAddRoundKeyOnes = undefined
+-- testAddRoundKeyOnes :: Block -> Bool
+-- testAddRoundKeyOnes b = addRoundKey b onesRoundKey == (`xor` 0xFF) <$> b
 
 -- Something xored with itself is zero
 prop_addRoundKeySelfIsZero :: Block -> Bool
-prop_addRoundKeySelfIsZero b = addRoundKey
+prop_addRoundKeySelfIsZero b = addRoundKey b b == zeroBlock
+
+{- Test overall encryption
+-------------------------------}
+-- TODO remove fake function
+
+encryptAES :: String -> Key -> B.ByteString
+encryptAES = undefined
+
+decryptAES :: B.ByteString -> Key -> String
+decryptAES = undefined
+
+-- Encryption then decryption of anything should yield the original
+prop_encThenDecIsOrig :: String -> Key -> Bool
+prop_encThenDecIsOrig s k = decryptAES (encryptAES s k) k == s
