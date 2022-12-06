@@ -9,19 +9,18 @@ import Data.Map (Map, insert)
 import Network.Socket
 import Network.Socket.ByteString (recv, send, sendAll)
 
-aesServer :: String -> [Socket] -> IO ()
+aesServer :: String -> [(Int, Socket)] -> IO ()
 aesServer port sockList = runTCPServer Nothing port talk
   where
     talk s = do
       msg <- recv s 1024
-      -- let newSMap = insert s (C.unpack msg) smap
-      -- case getAddrInfo s of
-      --   Nothing -> putStrLn "borked socket"
-      --   (Just x) -> putStrLn x
+
+      let newSockList = (length sockList, s) : sockList
       unless (S.null msg) $ do
         putStr "intercepted: "
         C.putStrLn msg
         sendAll s msg
+        --sendToOthers msg (length sockList) newSockList
         talk s
 
 sendToOthers :: S.ByteString -> Int -> [(Int, Socket)] -> IO ()
