@@ -3,7 +3,6 @@ module Main where
 import AESClient
 import AESServer
 import Data.Map qualified
-import Lib
 import System.Environment
 
 main :: IO ()

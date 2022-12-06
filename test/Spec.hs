@@ -1,4 +1,4 @@
-import Lib
+import Utils
 import Test.HUnit
 import Test.QuickCheck
 
