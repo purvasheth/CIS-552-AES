@@ -1,4 +1,4 @@
-module Lib (displayHex, stringToByteString, xorByteString, mapInd, shift, shiftBy, chunk, String) where
+module Utils (displayHex, stringToByteString, xorByteString, mapInd, shift, shiftBy, chunk, String) where
 
 import Data.Bits (xor)
 import Data.ByteString qualified as B

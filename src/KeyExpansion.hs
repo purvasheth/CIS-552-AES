@@ -5,7 +5,6 @@ import Data.Array qualified as A
 import Data.Bits (Bits (xor))
 import Data.ByteString qualified as B
 import Data.Word (Word8)
-import Lib (chunk, displayHex, shift, stringToByteString, xorByteString)
 import SBox (sbox)
 import Test.HUnit
   ( Counts,
@@ -14,6 +13,7 @@ import Test.HUnit
     (~?),
     (~?=),
   )
+import Utils (chunk, displayHex, shift, stringToByteString, xorByteString)
 
 chunkKey128 :: [a] -> Maybe [a]
 chunkKey128 x@[_, _, _, _] = Just x
