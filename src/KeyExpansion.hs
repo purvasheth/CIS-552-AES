@@ -1,4 +1,4 @@
-module KeyExpansion (generateKey) where
+module KeyExpansion (generateKey, Key) where
 
 import Data.Array ((!))
 import Data.Array qualified as A
@@ -14,6 +14,11 @@ import Test.HUnit
     (~?=),
   )
 import Utils (chunk, displayHex, shift, stringToByteString, xorByteString)
+
+type Key = B.ByteString
+
+key :: B.ByteString
+key = stringToByteString "Thats my Kung Fu"
 
 chunkKey128 :: [a] -> Maybe [a]
 chunkKey128 x@[_, _, _, _] = Just x
@@ -41,7 +46,7 @@ generateKey rc k =
     let w7 = xorByteString w6 w3
     return (B.concat [w4, w5, w6, w7])
 
-testKeys :: B.ByteString -> Maybe Bool
+testKeys :: Key -> Maybe Bool
 testKeys k = do
   k1 <- generateKey 1 k
   k2 <- generateKey 2 k1
@@ -75,8 +80,19 @@ testKeys k = do
           ]
     )
 
-key :: B.ByteString
-key = stringToByteString "Thats my Kung Fu"
+generateAllKeys :: Key -> Maybe [Key]
+generateAllKeys k = do
+  k1 <- generateKey 1 k
+  k2 <- generateKey 2 k1
+  k3 <- generateKey 3 k2
+  k4 <- generateKey 4 k3
+  k5 <- generateKey 5 k4
+  k6 <- generateKey 6 k5
+  k7 <- generateKey 7 k6
+  k8 <- generateKey 8 k7
+  k9 <- generateKey 9 k8
+  k10 <- generateKey 10 k9
+  return [k1, k2, k3, k4, k5, k6, k7, k8, k9, k10]
 
 -- >>> testKeys key
 -- Just True

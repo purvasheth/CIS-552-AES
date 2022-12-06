@@ -1,4 +1,4 @@
-module Utils (displayHex, stringToByteString, xorByteString, mapInd, shift, shiftBy, chunk, String) where
+module Utils (displayHex, stringToByteString, xorByteString, mapInd, shift, shiftBy, chunk, rightShiftBy) where
 
 import Data.Bits (xor)
 import Data.ByteString qualified as B
@@ -61,8 +61,25 @@ testShiftBy =
       shiftBy 3 [1, 2, 3] ~?= [1, 2, 3]
     ]
 
--- >>> runTestTT testShiftBy
--- Counts {cases = 4, tried = 4, errors = 0, failures = 0}
+rightShiftBy :: Int -> [a] -> [a]
+rightShiftBy _ [] = []
+rightShiftBy n l =
+  if n < length l
+    then drop (length l - n) l ++ take (length l - n) l
+    else drop (length l - (n `mod` length l)) l ++ take (length l - (n `mod` length l)) l
+
+testRightShiftBy :: Test
+testRightShiftBy =
+  TestList
+    [ rightShiftBy 0 [1, 2, 3, 4, 5] ~?= [1, 2, 3, 4, 5],
+      rightShiftBy 1 [1, 2, 3, 4, 5] ~?= [5, 1, 2, 3, 4],
+      rightShiftBy 5 [1, 2, 3, 4, 5] ~?= [1, 2, 3, 4, 5],
+      rightShiftBy 6 [1, 2, 3, 4, 5] ~?= [5, 1, 2, 3, 4],
+      rightShiftBy 11 [1, 2, 3, 4, 5] ~?= [5, 1, 2, 3, 4]
+    ]
+
+-- >>> runTestTT testRightShiftBy
+-- Counts {cases = 5, tried = 5, errors = 0, failures = 0}
 
 w32_1 :: B.ByteString
 w32_1 = B.pack [0x54, 0x77, 0x6f, 0x20]
@@ -98,5 +115,3 @@ testDisplayHex =
 
 -- >>> runTestTT testDisplayHex
 -- Counts {cases = 1, tried = 1, errors = 0, failures = 0}
-
--- read a string and convert it to a word8
