@@ -89,6 +89,8 @@ library
       common-stanza
   exposed-modules:
       Lib
+      AESServer
+      AESClient
   hs-source-dirs:
       src
   default-language: Haskell2010
