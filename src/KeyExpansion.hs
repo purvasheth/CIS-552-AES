@@ -80,7 +80,6 @@ testKeys k = do
           ]
     )
 
-generateAllKeys :: Key -> Maybe [Key]
 generateAllKeys k = do
   k1 <- generateKey 1 k
   k2 <- generateKey 2 k1
@@ -94,5 +93,5 @@ generateAllKeys k = do
   k10 <- generateKey 10 k9
   return [k1, k2, k3, k4, k5, k6, k7, k8, k9, k10]
 
--- >>> testKeys key
--- Just True
+-- >>> generateAllKeys key
+-- Just ["e2","32","fc","f1","91","12","91","88","b1","59","e4","e6","d6","79","a2","93"]

@@ -31,7 +31,7 @@ bar = B.map (`xor` 0x32) foo
 
 -- see bytestring in (slightly more) human readable form
 bsToHex :: B.ByteString -> [String]
-bsToHex bs = map (`showHex` "") (B.unpack bs)
+bsToHex bs = Prelude.map (`showHex` "") (B.unpack bs)
 
 -- >>> bsToHex bar
 -- ["ec","9f","8c","dd"]
@@ -42,14 +42,14 @@ bsToHex bs = map (`showHex` "") (B.unpack bs)
 
 -- ord converts from char to int
 msgInInts :: [Int]
-msgInInts = map ord "hello world!"
+msgInInts = Prelude.map ord "hello world!"
 
 -- >>> msgInInts
 -- [104,101,108,108,111,32,119,111,114,108,100,33]
 
 -- chr converts from int to an ascii char
 msg :: String
-msg = map chr msgInInts
+msg = Prelude.map chr msgInInts
 
 -- >>> msg
 -- "hello world!"
@@ -72,7 +72,7 @@ intToByte = fromIntegral
 
 -- this converts a bytestring to an ascii string (not an array of hex digits)
 bsToAsciiTheLongWay :: B.ByteString -> String
-bsToAsciiTheLongWay bs = map (chr . fromIntegral) (B.unpack bs)
+bsToAsciiTheLongWay bs = Prelude.map (chr . fromIntegral) (B.unpack bs)
 
 -- >>> bsToAscii (B.pack (map fromIntegral msgInInts))
 -- "hello world!"

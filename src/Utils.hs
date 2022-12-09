@@ -73,13 +73,13 @@ testRightShiftBy =
   TestList
     [ rightShiftBy 0 [1, 2, 3, 4, 5] ~?= [1, 2, 3, 4, 5],
       rightShiftBy 1 [1, 2, 3, 4, 5] ~?= [5, 1, 2, 3, 4],
+      rightShiftBy 2 [1, 2, 3, 4, 5] ~?= [4, 5, 1, 2, 3],
       rightShiftBy 5 [1, 2, 3, 4, 5] ~?= [1, 2, 3, 4, 5],
-      rightShiftBy 6 [1, 2, 3, 4, 5] ~?= [5, 1, 2, 3, 4],
       rightShiftBy 11 [1, 2, 3, 4, 5] ~?= [5, 1, 2, 3, 4]
     ]
 
 -- >>> runTestTT testRightShiftBy
--- Counts {cases = 5, tried = 5, errors = 0, failures = 0}
+-- Counts {cases = 6, tried = 6, errors = 0, failures = 0}
 
 w32_1 :: B.ByteString
 w32_1 = B.pack [0x54, 0x77, 0x6f, 0x20]

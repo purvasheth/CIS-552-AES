@@ -533,4 +533,4 @@ invSboxArray =
     ]
 
 invSbox :: B.ByteString -> B.ByteString
-invSbox = B.map (sboxArray !)
+invSbox = B.map (invSboxArray !)

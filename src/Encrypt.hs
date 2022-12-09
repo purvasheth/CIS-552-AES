@@ -1,4 +1,4 @@
-module Encrypt (Key, Block, QuarterBlock) where
+module Encrypt (Key, Block, QuarterBlock, cipher, mixCloumns) where
 
 import Control.Monad.State (State, StateT, evalState, evalStateT, get, put)
 import Data.Array ((!))
@@ -75,8 +75,11 @@ cipher = evalState (encrypt 1) initStore
           10 -> return (newBlock, newKey : keys)
           _ -> encrypt (round + 1)
 
--- >>> (fst cipher)
--- ")\195P_W\DC4 \246@\"\153\179\SUB\STX\215:"
+-- >>> displayHex (fst cipher)
+-- ["29","c3","50","5f","57","14","20","f6","40","22","99","b3","1a","2","d7","3a"]
 
--- >>> (snd cipher)
--- [Just "(\253\222\248m\164$J\204\192\164\254;1o&",Just "\191\226\191\144EY\250\178\161d\128\180\247\241\203\216",Just "\142Q\239!\250\187E\"\228=z\ACKV\149Kl",Just "\204\150\237\SYNt\234\170\ETX\RS\134?$\178\168\&1j",Just "\189=\194\135\184|G\NAKjl\149'\172.\SON",Just "\177);3\ENQA\133\146\210\DLE\210\&2\198B\155i",Just "\161\DC2\STX\201\180h\190\161\215QW\160\DC4RI[",Just "\210`\r\231\NAKz\188hc9\233\SOH\195\ETX\RS\251",Just "V\b \a\199\SUB\177\143vCUi\160:\247\250",Just "\226\&2\252\241\145\DC2\145\136\177Y\228\230\214y\162\147"]
+display x = do
+  displayHex <$> x
+
+-- >>> map display (snd cipher)
+-- [Just ["28","fd","de","f8","6d","a4","24","4a","cc","c0","a4","fe","3b","31","6f","26"],Just ["bf","e2","bf","90","45","59","fa","b2","a1","64","80","b4","f7","f1","cb","d8"],Just ["8e","51","ef","21","fa","bb","45","22","e4","3d","7a","6","56","95","4b","6c"],Just ["cc","96","ed","16","74","ea","aa","3","1e","86","3f","24","b2","a8","31","6a"],Just ["bd","3d","c2","87","b8","7c","47","15","6a","6c","95","27","ac","2e","e","4e"],Just ["b1","29","3b","33","5","41","85","92","d2","10","d2","32","c6","42","9b","69"],Just ["a1","12","2","c9","b4","68","be","a1","d7","51","57","a0","14","52","49","5b"],Just ["d2","60","d","e7","15","7a","bc","68","63","39","e9","1","c3","3","1e","fb"],Just ["56","8","20","7","c7","1a","b1","8f","76","43","55","69","a0","3a","f7","fa"],Just ["e2","32","fc","f1","91","12","91","88","b1","59","e4","e6","d6","79","a2","93"]]
