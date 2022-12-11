@@ -1,18 +1,99 @@
 module AESClient (aesClient) where
 
+-- import Control.Concurrent
+-- import Control.Exception (SomeException (SomeException), handle)
+-- import Control.Exception qualified as E
+-- import Control.Monad.Fix (fix)
+-- import Data.ByteString.Char8 qualified as C
+-- import Network.Socket
+-- import Network.Socket.ByteString (recv, send, sendAll, sendTo)
+-- import System.IO
+import Control.Concurrent
+import Control.Exception
 import Control.Exception qualified as E
+import Control.Monad (when)
+import Control.Monad.Fix (fix)
 import Data.ByteString.Char8 qualified as C
 import Network.Socket
-import Network.Socket.ByteString (recv, sendAll)
+import Network.Socket.ByteString (recv, send, sendAll)
+import System.IO
 
-aesClient :: String -> IO ()
-aesClient port = runTCPClient "127.0.0.1" port $ \s -> do
-  msgToSend <- getLine
-  sendAll s (C.pack msgToSend)
-  msg <- recv s 1024
-  putStr "Received: "
-  C.putStrLn msg
-  aesClient port
+-- type Msg = (Int, String)
+--
+-- -- TODO remove socklist
+-- aesClient :: String -> Maybe Socket -> IO ()
+-- aesClient port sockList = do
+--   sock <- socket AF_INET Stream 0
+--   setSocketOption sock ReuseAddr 1
+--   bind sock (SockAddrInet 5520 (tupleToHostAddress (127, 0, 0, 1)))
+--   listen sock 2
+--   chan <- newChan
+--   _ <- forkIO $
+--     fix $ \loop -> do
+--       (_, _) <- readChan chan
+--       loop
+--   mainLoop sock chan 0
+--
+-- mainLoop :: Socket -> Chan Msg -> Int -> IO ()
+-- mainLoop sock chan msgNum = do
+--   conn <- accept sock
+--   forkIO (runConn conn chan msgNum)
+--   mainLoop sock chan $! msgNum + 1
+--
+-- runConn :: (Socket, SockAddr) -> Chan Msg -> Int -> IO ()
+-- runConn (sock, _) chan msgNum = do
+--   commLine <- dupChan chan
+--
+--   -- fork off a thread for reading from the duplicated channel
+--   reader <- forkIO $
+--     fix $ \loop -> do
+--       (nextNum, line) <- readChan commLine
+--       when (msgNum /= nextNum) $ sendAll sock $ C.pack line
+--       loop
+--
+--   handle (\(SomeException _) -> return ()) $
+--     fix $ \loop -> do
+--       -- lineBS <- recv sock 1024
+--       -- let line = C.unpack lineBS
+--       line <- getLine
+--       case line of
+--         -- If an exception is caught, send a message and break the loop
+--         "quit" -> sendAll sock $ C.pack "Bye!"
+--         -- else, continue looping.
+--         _ -> sendAll sock (C.pack line) >> loop
+--
+--   killThread reader -- kill after the loop ends
+--   -- putStrLn $ name ++ " has left"
+--   -- broadcast ("<-- " ++ name ++ " left.") -- make a final broadcast
+
+-- aesClient :: String -> IO ()
+-- aesClient port = runTCPClient "127.0.0.1" port $ \s -> do
+--   h <- socketToHandle s ReadWriteMode
+--   aesClient2 h
+--
+--   return ()
+--
+-- aesClient2 :: Handle -> IO ()
+-- aesClient2 h = do
+--   -- h <- hio
+--   putStrLn (show h)
+--   msgToSend <- getLine
+--   hPutStrLn h msgToSend
+--   msg <- fmap init (hGetLine h)
+--   putStr "Received: "
+--   hPutStrLn h msg
+--   aesClient2 h
+
+aesClient :: String -> Maybe Socket -> IO ()
+aesClient port ms = case ms of
+  Nothing -> runTCPClient "127.0.0.1" port $ \s -> aesClient port (Just s)
+  Just s -> do
+    msgToSend <- getLine
+    sendAll s (C.pack msgToSend)
+    msg <- recv s 1024
+    -- putStr "Received: "
+    C.putStrLn msg
+    aesClient port (Just s)
 
 -- from the "network-run" package.
 runTCPClient :: HostName -> ServiceName -> (Socket -> IO a) -> IO a
