@@ -1,4 +1,4 @@
-module KeyExpansion (generateKey, Key) where
+module KeyExpansion (generateKey, generateAllKeys) where
 
 import Data.Array ((!))
 import Data.Array qualified as A
@@ -13,19 +13,22 @@ import Test.HUnit
     (~?),
     (~?=),
   )
-import Utils (chunk, displayHex, shift, stringToByteString, xorByteString)
-
-type Key = B.ByteString
-
-key :: B.ByteString
-key = stringToByteString "Thats my Kung Fu"
+import Utils
+  ( Key,
+    QuarterBlock,
+    chunk,
+    displayHex,
+    leftShift,
+    stringToByteString,
+    xorByteString,
+  )
 
 chunkKey128 :: [a] -> Maybe [a]
 chunkKey128 x@[_, _, _, _] = Just x
 chunkKey128 _ = Nothing
 
-rotWord :: B.ByteString -> B.ByteString
-rotWord w = B.pack (shift (B.unpack w))
+rotWord :: QuarterBlock -> QuarterBlock
+rotWord w = B.pack (leftShift (B.unpack w))
 
 rconArray :: A.Array Int Word8
 rconArray =
@@ -33,30 +36,46 @@ rconArray =
     (1, 10)
     [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36]
 
-rcon :: Int -> B.ByteString
+rcon :: Int -> QuarterBlock
 rcon rc = B.pack [rconArray ! rc, 0, 0, 0]
 
-generateKey :: Int -> B.ByteString -> Maybe B.ByteString
+generateKey :: Int -> Maybe Key -> Maybe Key
 generateKey rc k =
   do
-    [w0, w1, w2, w3] <- chunkKey128 (chunk 4 k)
+    key <- k
+    [w0, w1, w2, w3] <- chunkKey128 (chunk 4 key)
     let w4 = xorByteString w0 (xorByteString (rcon rc) (sbox . rotWord $ w3))
     let w5 = xorByteString w4 w1
     let w6 = xorByteString w5 w2
     let w7 = xorByteString w6 w3
     return (B.concat [w4, w5, w6, w7])
 
-testKeys :: Key -> Maybe Bool
+generateAllKeys :: Maybe Key -> [Maybe Key]
+generateAllKeys k = do
+  let k1 = generateKey 1 k
+  let k2 = generateKey 2 k1
+  let k3 = generateKey 3 k2
+  let k4 = generateKey 4 k3
+  let k5 = generateKey 5 k4
+  let k6 = generateKey 6 k5
+  let k7 = generateKey 7 k6
+  let k8 = generateKey 8 k7
+  let k9 = generateKey 9 k8
+  let k10 = generateKey 10 k9
+  [k10, k9, k8, k7, k6, k5, k4, k3, k2, k1]
+
+-- regression test that verifies the last key
+testKeys :: Maybe Key -> Maybe Bool
 testKeys k = do
-  k1 <- generateKey 1 k
-  k2 <- generateKey 2 k1
-  k3 <- generateKey 3 k2
-  k4 <- generateKey 4 k3
-  k5 <- generateKey 5 k4
-  k6 <- generateKey 6 k5
-  k7 <- generateKey 7 k6
-  k8 <- generateKey 8 k7
-  k9 <- generateKey 9 k8
+  let k1 = generateKey 1 k
+  let k2 = generateKey 2 k1
+  let k3 = generateKey 3 k2
+  let k4 = generateKey 4 k3
+  let k5 = generateKey 5 k4
+  let k6 = generateKey 6 k5
+  let k7 = generateKey 7 k6
+  let k8 = generateKey 8 k7
+  let k9 = generateKey 9 k8
   k10 <- generateKey 10 k9
   return
     ( k10
@@ -80,18 +99,8 @@ testKeys k = do
           ]
     )
 
-generateAllKeys k = do
-  k1 <- generateKey 1 k
-  k2 <- generateKey 2 k1
-  k3 <- generateKey 3 k2
-  k4 <- generateKey 4 k3
-  k5 <- generateKey 5 k4
-  k6 <- generateKey 6 k5
-  k7 <- generateKey 7 k6
-  k8 <- generateKey 8 k7
-  k9 <- generateKey 9 k8
-  k10 <- generateKey 10 k9
-  return [k1, k2, k3, k4, k5, k6, k7, k8, k9, k10]
+key :: Key
+key = stringToByteString "Thats my Kung Fu"
 
--- >>> generateAllKeys key
--- Just ["e2","32","fc","f1","91","12","91","88","b1","59","e4","e6","d6","79","a2","93"]
+-- >>> testKeys (Just key)
+-- Just True

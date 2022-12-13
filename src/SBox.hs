@@ -1,9 +1,15 @@
-module SBox (sbox, invSbox) where
+module SBox (sbox, invSbox, sboxArray, invSboxArray) where
 
 import Data.Array ((!))
 import Data.Array qualified as A
 import Data.ByteString qualified as B
 import Data.Word (Word8)
+
+sbox :: B.ByteString -> B.ByteString
+sbox = B.map (sboxArray !)
+
+invSbox :: B.ByteString -> B.ByteString
+invSbox = B.map (invSboxArray !)
 
 sboxArray :: A.Array Word8 Word8
 sboxArray =
@@ -267,9 +273,6 @@ sboxArray =
       0x16
     ]
 
-sbox :: B.ByteString -> B.ByteString
-sbox = B.map (sboxArray !)
-
 invSboxArray :: A.Array Word8 Word8
 invSboxArray =
   A.listArray
@@ -531,6 +534,3 @@ invSboxArray =
       0x0c,
       0x7d
     ]
-
-invSbox :: B.ByteString -> B.ByteString
-invSbox = B.map (invSboxArray !)
