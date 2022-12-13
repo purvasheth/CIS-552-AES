@@ -10,6 +10,6 @@ main :: IO ()
 main = do
   args <- getArgs
   case args of
-    ["server", p] -> AESServer.aesServer p []
-    ["client", p] -> AESClient.aesClient p Nothing 0
+    ["server"] -> AESServer.aesServer 5520
+    ["client", key] -> AESClient.aesClient "5520" Nothing key
     _ -> putStrLn "unknown command"
