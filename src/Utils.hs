@@ -12,6 +12,7 @@ module Utils
     Key,
     getString,
     getBlocks,
+    utilTests,
   )
 where
 
