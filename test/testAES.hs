@@ -278,13 +278,6 @@ zeroBlock = buildBlockFromQuarterRow 0 (B.pack [0x00, 0x00, 0x00, 0x00]) 0x00
 prop_addRoundKeySelfIsZero :: Block -> Bool
 prop_addRoundKeySelfIsZero b = addRoundKey b b == zeroBlock
 
-{- Test helper functions for conversion of string to blocks and vice-versa
--------------------------------}
--- TODO ask how to use different length ByteStrings in tests
--- prop_stringToBlocksIsOrig :: String -> Bool
--- prop_stringToBlocksIsOrig str =
---   getString (getBlocks str) == str
-
 {- Test overall encryption
 -------------------------------}
 

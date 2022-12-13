@@ -137,14 +137,14 @@ getBlocks str = chunk 16 $ B.append (B.replicate (padLength str) 0x00) str
             then 0
             else 16 - l
 
--- testGetBlocks :: Test
--- testGetBlocks =
---   TestList
---     [ getBlocks "just 12 bits"
---         ~?= [B.append (B.replicate 4 0x00) (stringToByteString "just 12 bits")],
---       getBlocks "pad nothing here"
---         ~?= [stringToByteString "pad nothing here"]
---     ]
+testGetBlocks :: Test
+testGetBlocks =
+  TestList
+    [ getBlocks (stringToByteString "just 12 bits")
+        ~?= [B.append (B.replicate 4 0x00) (stringToByteString "just 12 bits")],
+      getBlocks (stringToByteString "pad nothing here")
+        ~?= [stringToByteString "pad nothing here"]
+    ]
 
 getString :: [Maybe Block] -> Maybe B.ByteString
 getString mblocks = unpad . B.concat <$> convert mblocks
@@ -162,18 +162,18 @@ getString mblocks = unpad . B.concat <$> convert mblocks
         then (count + 1, True)
         else (count, False)
 
--- testGetString :: Test
--- testGetString =
---   TestList
---     [ getString
---         [Just $ B.append (B.replicate 4 0x00) (stringToByteString "just 12 bits")]
---         ~?= Just "just 12 bits",
---       getString [Just (stringToByteString "pad nothing here")]
---         ~?= Just "pad nothing here"
---     ]
+testGetString :: Test
+testGetString =
+  TestList
+    [ getString
+        [Just $ B.append (B.replicate 4 0x00) (stringToByteString "just 12 bits")]
+        ~?= Just (stringToByteString "just 12 bits"),
+      getString [Just (stringToByteString "pad nothing here")]
+        ~?= Just (stringToByteString "pad nothing here")
+    ]
 
 utilTests :: IO ()
 utilTests = do
   putStrLn "Unit tests:"
-  _ <- runTestTT $ TestList [testChunk, testLeftShift, testLeftShiftBy, testRightShiftBy, testXorByteString, testDisplayHex]
+  _ <- runTestTT $ TestList [testChunk, testLeftShift, testLeftShiftBy, testRightShiftBy, testXorByteString, testDisplayHex, testGetBlocks, testGetString]
   putStrLn ""
