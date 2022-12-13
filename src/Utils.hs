@@ -50,8 +50,10 @@ chunk k = takeWhile (not . B.null) . map (B.take k) . iterate (B.drop k)
 testChunk :: Test
 testChunk =
   TestList
-    [ chunk 3 (B.pack [1, 2, 3, 4, 5, 6]) ~?= [B.pack [1, 2, 3], B.pack [4, 5, 6]],
-      chunk 5 (B.pack [1, 2, 3, 4, 5, 6]) ~?= [B.pack [1, 2, 3, 4, 5], B.pack [6]]
+    [ chunk 3 (B.pack [1, 2, 3, 4, 5, 6])
+        ~?= [B.pack [1, 2, 3], B.pack [4, 5, 6]],
+      chunk 5 (B.pack [1, 2, 3, 4, 5, 6])
+        ~?= [B.pack [1, 2, 3, 4, 5], B.pack [6]]
     ]
 
 leftShift :: [a] -> [a]
@@ -84,7 +86,9 @@ rightShiftBy _ [] = []
 rightShiftBy n l =
   if n < length l
     then drop (length l - n) l ++ take (length l - n) l
-    else drop (length l - (n `mod` length l)) l ++ take (length l - (n `mod` length l)) l
+    else
+      drop (length l - (n `mod` length l)) l
+        ++ take (length l - (n `mod` length l)) l
 
 testRightShiftBy :: Test
 testRightShiftBy =
@@ -167,7 +171,9 @@ testGetString :: Test
 testGetString =
   TestList
     [ getString
-        [Just $ B.append (B.replicate 4 0x00) (stringToByteString "just 12 bits")]
+        [ Just $
+            B.append (B.replicate 4 0x00) (stringToByteString "just 12 bits")
+        ]
         ~?= Just (stringToByteString "just 12 bits"),
       getString [Just (stringToByteString "pad nothing here")]
         ~?= Just (stringToByteString "pad nothing here")
@@ -176,5 +182,16 @@ testGetString =
 utilTests :: IO ()
 utilTests = do
   putStrLn "Unit tests:"
-  _ <- runTestTT $ TestList [testChunk, testLeftShift, testLeftShiftBy, testRightShiftBy, testXorByteString, testDisplayHex, testGetBlocks, testGetString]
+  _ <-
+    runTestTT $
+      TestList
+        [ testChunk,
+          testLeftShift,
+          testLeftShiftBy,
+          testRightShiftBy,
+          testXorByteString,
+          testDisplayHex,
+          testGetBlocks,
+          testGetString
+        ]
   putStrLn ""

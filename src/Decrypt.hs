@@ -73,7 +73,7 @@ getPlainText k cipher =
         put finalBlock
         decrypt keys
 
--- Example
+-- Example (Regression Test)
 str :: String
 str = "A long string which is the message to be sent."
 

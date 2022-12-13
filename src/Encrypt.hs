@@ -32,7 +32,10 @@ initStore block key = (xorByteString block key, Just key)
 addRoundKey :: Block -> Key -> Block
 addRoundKey = xorByteString
 
-shiftRowsHelper :: (Int -> [Word8] -> [Word8]) -> [QuarterBlock] -> [QuarterBlock]
+shiftRowsHelper ::
+  (Int -> [Word8] -> [Word8]) ->
+  [QuarterBlock] ->
+  [QuarterBlock]
 shiftRowsHelper shiftFunction rows = B.transpose (mapInd f (B.transpose rows))
   where
     f :: QuarterBlock -> Int -> QuarterBlock

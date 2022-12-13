@@ -49,16 +49,6 @@ runConn :: (Socket, SockAddr) -> Chan Msg -> Int -> IO ()
 runConn (sock, _) chan msgNum = do
   let broadcast msg = writeChan chan (msgNum, msg)
 
-  -- putStrLn (show sock)
-  -- putStrLn "sending greeting"
-  -- sendAll sock $ C.pack "Hi, what's your name?"
-  -- nameBS <- recv sock 1024
-  -- let name = C.unpack nameBS
-  -- putStrLn $ "new user joined: " ++ name
-  -- broadcast ("--> " ++ name ++ " entered chat.")
-  -- putStrLn "sending welcome"
-  -- sendAll sock $ C.pack ("Welcome, " ++ name ++ "!")
-
   commLine <- dupChan chan
 
   -- fork off a thread for reading from the duplicated channel
