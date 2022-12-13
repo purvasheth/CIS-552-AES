@@ -8,27 +8,32 @@ import Encrypt
 import Network.Socket
 import Network.Socket.ByteString (recv, send, sendAll)
 import System.IO
+import Utils
 
 type Msg = (Int, String)
 
 -- Create a socket if we don't have one, then recursively call
 -- the client on that socket
-aesClient :: String -> Maybe Socket -> String -> IO ()
+aesClient :: String -> Maybe Socket -> Key -> IO ()
 aesClient port ms key = case ms of
   Nothing -> setupSocket "127.0.0.1" port $ \s -> aesClient port (Just s) key
   Just s -> do
     chan <- newChan
-    forkIO $ readFromSocket s
-    msgToSend <- getLine
-    sendAll s (C.pack msgToSend)
+    forkIO $ readFromSocket s key
+    msgToSend <- C.getLine
+    sendAll s $ C.concat $ map (getCipher key) (getBlocks msgToSend)
     aesClient port (Just s) key
 
 -- thread out our reads so we can still recieve while waiting for user input
-readFromSocket :: Socket -> IO ()
-readFromSocket sock = do
+readFromSocket :: Socket -> Key -> IO ()
+readFromSocket sock k = do
   msg <- recv sock 1024
-  C.putStrLn msg
-  readFromSocket sock
+  C.putStrLn $ dcrpt msg k
+  readFromSocket sock k
+  where
+    dcrpt msg k = case getString $ map (getPlainText k) (chunk 16 msg) of
+      Nothing -> undefined
+      (Just x) -> x
 
 {-
 This function was taken from the simple echo client example here:

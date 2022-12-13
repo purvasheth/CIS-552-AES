@@ -78,7 +78,7 @@ runConn (sock, _) chan msgNum = do
         -- If an exception is caught, send a message and break the loop
         "quit" -> sendAll sock $ C.pack "Bye!"
         -- else, continue looping.
-        _ -> broadcast (name ++ ": " ++ line) >> loop
+        _ -> broadcast line >> loop
 
   killThread reader -- kill after the loop ends
   putStrLn $ name ++ " has left"
