@@ -10,6 +10,17 @@ import Network.Socket
 import Network.Socket.ByteString (recv, send, sendAll)
 import System.IO
 
+{------------------------------------------------
+
+This server code is adapted from the haskell wiki article
+on creating a chat server. The structure is largely unchanged
+but it has been switched to use sockets instead of file
+descriptors, and some other small tweaks
+
+https://wiki.haskell.org/Implement_a_chat_server
+
+-------------------------------------------------}
+
 --aesServer :: IO ()
 aesServer :: String -> [(Int, Socket)] -> IO ()
 -- TODO remove socklist
@@ -41,11 +52,13 @@ runConn (sock, _) chan msgNum = do
   let broadcast msg = writeChan chan (msgNum, msg)
 
   -- putStrLn (show sock)
+  putStrLn "sending greeting"
   sendAll sock $ C.pack "Hi, what's your name?"
   nameBS <- recv sock 1024
   let name = C.unpack nameBS
   putStrLn $ "new user joined: " ++ name
   broadcast ("--> " ++ name ++ " entered chat.")
+  putStrLn "sending welcome"
   sendAll sock $ C.pack ("Welcome, " ++ name ++ "!")
 
   commLine <- dupChan chan
@@ -54,6 +67,8 @@ runConn (sock, _) chan msgNum = do
   reader <- forkIO $
     fix $ \loop -> do
       (nextNum, line) <- readChan commLine
+      putStr "got: "
+      putStrLn line
       when (msgNum /= nextNum) $ sendAll sock $ C.pack line
       loop
 
