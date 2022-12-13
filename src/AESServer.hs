@@ -50,14 +50,14 @@ runConn (sock, _) chan msgNum = do
   let broadcast msg = writeChan chan (msgNum, msg)
 
   -- putStrLn (show sock)
-  putStrLn "sending greeting"
-  sendAll sock $ C.pack "Hi, what's your name?"
-  nameBS <- recv sock 1024
-  let name = C.unpack nameBS
-  putStrLn $ "new user joined: " ++ name
-  broadcast ("--> " ++ name ++ " entered chat.")
-  putStrLn "sending welcome"
-  sendAll sock $ C.pack ("Welcome, " ++ name ++ "!")
+  -- putStrLn "sending greeting"
+  -- sendAll sock $ C.pack "Hi, what's your name?"
+  -- nameBS <- recv sock 1024
+  -- let name = C.unpack nameBS
+  -- putStrLn $ "new user joined: " ++ name
+  -- broadcast ("--> " ++ name ++ " entered chat.")
+  -- putStrLn "sending welcome"
+  -- sendAll sock $ C.pack ("Welcome, " ++ name ++ "!")
 
   commLine <- dupChan chan
 
@@ -81,5 +81,5 @@ runConn (sock, _) chan msgNum = do
         _ -> broadcast line >> loop
 
   killThread reader -- kill after the loop ends
-  putStrLn $ name ++ " has left"
-  broadcast ("<-- " ++ name ++ " left.") -- make a final broadcast
+  -- putStrLn $ name ++ " has left"
+  -- broadcast ("<-- " ++ name ++ " left.") -- make a final broadcast

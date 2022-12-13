@@ -1,4 +1,4 @@
-module AESClient (aesClient) where
+module AESClient (startClient) where
 
 import Control.Concurrent
 import Control.Exception qualified as E
@@ -12,17 +12,22 @@ import Utils
 
 type Msg = (Int, String)
 
+startClient :: String -> Key -> IO ()
+startClient port key = do
+  putStrLn "username: "
+  name <- C.getLine
+  setupSocket "127.0.0.1" port $ \s -> aesClient port s key name
+
 -- Create a socket if we don't have one, then recursively call
 -- the client on that socket
-aesClient :: String -> Maybe Socket -> Key -> IO ()
-aesClient port ms key = case ms of
-  Nothing -> setupSocket "127.0.0.1" port $ \s -> aesClient port (Just s) key
-  Just s -> do
-    chan <- newChan
-    forkIO $ readFromSocket s key
-    msgToSend <- C.getLine
-    sendAll s $ C.concat $ map (getCipher key) (getBlocks msgToSend)
-    aesClient port (Just s) key
+aesClient :: String -> Socket -> Key -> C.ByteString -> IO ()
+aesClient port s key name = do
+  chan <- newChan
+  forkIO $ readFromSocket s key
+  msgToSend <- C.getLine
+  let prefixedMsg = name <> C.pack ": " <> msgToSend
+  sendAll s $ C.concat $ map (getCipher key) (getBlocks prefixedMsg)
+  aesClient port s key name
 
 -- thread out our reads so we can still recieve while waiting for user input
 readFromSocket :: Socket -> Key -> IO ()
