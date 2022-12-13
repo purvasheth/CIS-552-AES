@@ -1,4 +1,4 @@
-module Encrypt (getCipher, mixCloumns, shiftRows) where
+module Encrypt (getCipher, mixCloumns, shiftRows, shiftRowsHelper) where
 
 import Control.Monad.State (State, StateT, evalState, evalStateT, get, put)
 import Data.Array ((!))
@@ -32,11 +32,14 @@ initStore block key = (xorByteString block key, Just key)
 addRoundKey :: Block -> Key -> Block
 addRoundKey = xorByteString
 
-shiftRows :: [QuarterBlock] -> [QuarterBlock]
-shiftRows rows = B.transpose (mapInd f (B.transpose rows))
+shiftRowsHelper :: (Int -> [Word8] -> [Word8]) -> [QuarterBlock] -> [QuarterBlock]
+shiftRowsHelper shiftFunction rows = B.transpose (mapInd f (B.transpose rows))
   where
     f :: QuarterBlock -> Int -> QuarterBlock
-    f b i = B.pack (leftShiftBy i (B.unpack b))
+    f b i = B.pack (shiftFunction i (B.unpack b))
+
+shiftRows :: [QuarterBlock] -> [QuarterBlock]
+shiftRows = shiftRowsHelper leftShiftBy
 
 mixCloumns :: [[A.Array Word8 Word8]] -> [QuarterBlock] -> Block
 mixCloumns matrix rows = B.concat (map (multiplyMatrix matrix) rows)

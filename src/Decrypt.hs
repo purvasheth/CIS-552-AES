@@ -9,7 +9,7 @@ import Data.ByteString qualified as B
 import Data.Char (chr, ord)
 import Data.Map qualified as Map
 import Data.Word (Word8)
-import Encrypt (getCipher, mixCloumns)
+import Encrypt (getCipher, mixCloumns, shiftRowsHelper)
 import KeyExpansion (generateAllKeys, generateKey)
 import MixColumns (invMixColumnsMatrix, mixColumnsMatrix)
 import SBox (invSbox)
@@ -36,10 +36,7 @@ initStore (x : xs) b = do
   return (xorByteString key b)
 
 invShiftRows :: [QuarterBlock] -> [QuarterBlock]
-invShiftRows rows = B.transpose (mapInd f (B.transpose rows))
-  where
-    f :: QuarterBlock -> Int -> QuarterBlock
-    f b i = B.pack (rightShiftBy i (B.unpack b))
+invShiftRows = shiftRowsHelper rightShiftBy
 
 addRoundKey :: Maybe Block -> Maybe Key -> Maybe Block
 addRoundKey block key = do
@@ -78,11 +75,11 @@ getPlainText k cipher =
 
 -- Example
 str :: String
-str = "long string which is the message to be sent"
+str = "A long string which is the message to be sent."
 
 key :: Key
 key = stringToByteString "some key 16 bits"
 
 -- could also use concat on the encrypt side and chunk on the decrypt side
 -- >>> getString (map (getPlainText key) (map (getCipher key) (getBlocks str)))
--- Just "long string which is the message to be sent"
+-- Just "A long string which is the message to be sent."

@@ -41,6 +41,14 @@ import Test.QuickCheck
     getPrintableString,
   )
 import Test.QuickCheck as QC
+  ( Arbitrary (arbitrary),
+    Gen,
+    Testable,
+    arbitraryPrintableChar,
+    maxSuccess,
+    quickCheckWith,
+    stdArgs,
+  )
 import Utils (Block, Key, QuarterBlock, chunk, xorByteString)
 
 ------- Enable generation of arbitrary blocks ------
