@@ -98,12 +98,12 @@ aesClient port ms msgNum = case ms of
   Nothing -> runTCPClient "127.0.0.1" port $ \s -> aesClient port (Just s) msgNum
   Just s -> do
     chan <- newChan
-    forkIO (runConn s chan msgNum)
+    forkIO $ readFromChannel s
     msgToSend <- getLine
     sendAll s (C.pack msgToSend)
-    msg <- recv s 1024
+    --msg <- recv s 1024
     -- putStr "Received: "
-    C.putStrLn msg
+    -- C.putStrLn msg
     aesClient port (Just s) (msgNum + 1)
 
 --
@@ -122,17 +122,23 @@ runTCPClient host port client = withSocketsDo $ do
       connect sock $ addrAddress addr
       return sock
 
-runConn :: Socket -> Chan Msg -> Int -> IO ()
-runConn sock chan msgNum = do
-  commLine <- dupChan chan
+readFromChannel :: Socket -> IO ()
+readFromChannel sock = do
+  -- msg <- recv
+  msg <- recv sock 1024
+  C.putStrLn msg
 
-  -- fork off a thread for reading from the duplicated channel
-  reader <- forkIO $
-    fix $ \loop -> do
-      (nextNum, line) <- readChan commLine
-      when (msgNum /= nextNum) $ sendAll sock $ C.pack line
-      loop
-
-  killThread reader -- kill after the loop ends
-  -- putStrLn $ name ++ " has left"
-  -- broadcast ("<-- " ++ name ++ " left.") -- make a final broadcast
+-- runConn :: Socket -> Chan Msg -> Int -> IO ()
+-- runConn sock chan msgNum = do
+--   commLine <- dupChan chan
+--
+--   -- fork off a thread for reading from the duplicated channel
+--   reader <- forkIO $
+--     fix $ \loop -> do
+--       (nextNum, line) <- readChan commLine
+--       when (msgNum /= nextNum) $ sendAll sock $ C.pack line
+--       loop
+--
+--   killThread reader -- kill after the loop ends
+--   -- putStrLn $ name ++ " has left"
+--   -- broadcast ("<-- " ++ name ++ " left.") -- make a final broadcast
